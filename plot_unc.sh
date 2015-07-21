@@ -8,6 +8,27 @@ echo "PDF Type : Gluon : 2, u_v : 7, d_v : 8."
 echo "Example : 01 2 g hera"
 read scale flavor string exp
 
+case $scale in
+"01") 
+	real_scale=$(echo "1.9")
+	;;
+"02")
+	real_scale=$(echo "10.0")
+	;;
+"03")
+	real_scale=$(echo "100.0")
+	;;
+"04")
+	real_scale=$(echo "1000.0")
+	;;
+"05")
+	real_scale=$(echo "10000.0")
+	;;
+"06")
+	real_scale=$(echo "100000.0")
+esac
+
+echo "The scale you have chosen : " $real_scale 
 
 MCMethod (){
 if [ $4 == "hera" ]; then
@@ -230,19 +251,35 @@ sed -i 's/Shade_MC/Shade_MC_rel/' draw_pdf_$string.C
 
 root -l -q draw_pdf_$string.C
 
+LABEL_num_tx=$(cat plot_super.C | grep -n "CMS NNLO" | grep tx | awk '{print $1}' | cut -d : -f1)
+LABEL_num_tx2=$(cat plot_super.C | grep -n tx2 | grep TLatex | awk '{print $1}' | cut -d : -f1)
+
 case "$string" in
 "dv")
 	sed -i ''$MAX_num's/.*/g->SetMaximum(0.6)\;/' plot_super.C
+	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,0.6,\"CMS NNLO\")\;/' plot_super.C
+	sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,0.5811539,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
+
 ;;
 "g")
 	if [ $scale -eq "05" ] || [ $scale -eq "04" ];then
 		sed -i ''$MAX_num's/.*/g->SetMaximum(60)\;/' plot_super.C
+		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,60.835391,\"CMS NNLO\")\;/' plot_super.C
+		sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.03921771,57.105647,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
+
 	else
 		sed -i ''$MAX_num's/.*/g->SetMaximum(4.5)\;/' plot_super.C
+		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,4.535391,\"CMS NNLO\")\;/' plot_super.C
+		sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,4.105647,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
 	fi
+	
+
 ;;
 "uv")
 	sed -i ''$MAX_num's/.*/g->SetMaximum(1.0)\;/' plot_super.C
+	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,1.011866,\"CMS NNLO\")\;/' plot_super.C
+	sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,0.8811539,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
+	
 ;;
 
 esac
@@ -262,7 +299,7 @@ mv c2.pdf $string.$scale.MC_13p.pdf
 mv $string.$scale.pdf plots/
 mv $string.$scale.MC_13p.pdf plots/
 
-#evince plots/$string.$scale.pdf 
+evince plots/$string.$scale.pdf 
 #evince plots/$string.$scale.MC_heraOnly.pdf 
 #evince plots/$string.$scale.MC_rel.pdf 
  

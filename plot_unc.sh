@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE=/nfs/dust/cms/user/eren/pbs/WA/Plotting
+BASE=/nfs/dust/cms/user/eren/pbs/InclJets/Plotting
 MC_path=/nfs/dust/cms/user/eren/pbs/WA/MC_method
 echo "This script is for calculating experimental, model and parametrisation uncertainty for each flavor and Q2"
 echo "Please enter 4 parameters. 1st one is scale, 2nd is pdf type number, 3rd is string and 4th is experiment"
@@ -28,7 +28,7 @@ case $scale in
 	real_scale=$(echo "100000.0")
 esac
 
-echo "The scale you have chosen : " $real_scale 
+echo "The scale you have chosen (GeV^2): " $real_scale 
 
 MCMethod (){
 if [ $4 == "hera" ]; then
@@ -38,7 +38,7 @@ else
 fi
 
 cat $MC_path/13pHERAII+CMS_WAsym_replica_74/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_$1
-cat WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$1_center_$3
+cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$1_center_$3
 
 for i in $(cat files_mc);do
 	cat $MC_path/$i/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$i	
@@ -57,7 +57,7 @@ for j in `seq 1 101`;do
 done  
 
 paste -d ' ' mc_sq mc_mean | awk '{print sqrt($1-($2*$2))}' > mc_sigma  
-#paste -d ' ' mc_sq | awk '{print sqrt($1)}' > mc_sigma  
+paste -d ' ' mc_sq | awk '{print sqrt($1)}' > mc_RMS  
 
 #paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_rms | awk '{print $1,$2,($2+$3),($2-$3)}' > MC.$3.txt
 paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_sigma | awk '{print $1,$2,($2+$3),($2-$3)}' > MC.$3.txt
@@ -74,7 +74,7 @@ GetExpUnc (){
 # $2 = pdf type --Field
 # $3 = pdf type --String 
 # example : GetExpUnc 02 5 uv
-cd WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output 
+cd hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output
 
 ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep p_$1 |  awk '{print $9}' > pdf_list_p
 ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep m_$1 |  awk '{print $9}' > pdf_list_m
@@ -108,23 +108,26 @@ cat $3_13source_p | awk '{print ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)
 
 cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp
 paste tmp $3_plus $3_minus | awk '{print $1,($1+$2),($1-$3)}' > tmp_2.txt
+
 cat pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > x
+paste x tmp $3_plus $3_minus | awk '{print $1,$2,($3/$2),(-1)*($4/$2)}' > $3.relative.exp.txt 
+
 paste x tmp_2.txt | awk '{print $1,$2,$3,$4}' > $3.txt
 rm tmp tmp_2.txt x
 cd $BASE
 }
 
 GetParUnc (){
-   cat WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$3-$1_center 
-   cat WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_center 
+   cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$3-$1_center 
+   cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_center 
    paste tmp_x_center tmp_$3-$1_center | awk '{print $1,$2}' > ParaUncert/tmp_total
    rm tmp_$3-$1_center tmp_x_center
    cd ParaUncert
-   ls -ltrh | grep WA |  awk '{print $9}' > tmp_list
+   ls -ltrh | grep hera2 |  awk '{print $9}' > tmp_list
    for i in $(cat tmp_list);do
 	cat $BASE/ParaUncert/$i/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$i 
    done 
-   paste -d ' ' tmp_WA* > all_param
+   paste -d ' ' tmp_hera2* > all_param
    for j in `seq 1 101`;do
 	cat $BASE/ParaUncert/all_param | sed -n ''$j'p' > tmp_lines
 	for i in $(cat tmp_lines);do echo $i;done | sort -n | tail -1 >> tmp_max
@@ -139,6 +142,7 @@ GetParUnc (){
    cat $3_para.txt | awk '{print ($2-$4)}' > para_minus 
    paste -d ' ' $BASE/ModelUncert/exp_model_p para_plus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_para_p 
    paste -d ' ' $BASE/ModelUncert/exp_model_m para_minus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_para_m 
+   paste tmp_total exp_model_para_p exp_model_para_m | awk '{print $1,$2,($3/$2),(-1)*($4/$2)}' > $3.relative.para.txt 
    paste tmp_total exp_model_para_p exp_model_para_m | awk '{print $1,$2,($2+$3),($2-$3)}' > $3_para.txt
    mv $3_para.txt ../
    rm tmp_*
@@ -146,16 +150,17 @@ GetParUnc (){
 }
 
 GetModelUnc (){
-   cat WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$3-$1_center 
-   cat WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_center 
+   cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$3-$1_center 
+   cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_center 
    paste tmp_x_center tmp_$3-$1_center | awk '{print $1,$2}' > ModelUncert/tmp_total
    cd ModelUncert
-   
+   rm model_*   
+ 
    for i in $(cat list);do
-   	UP=$(ls -ltrh up | grep $i | awk '{print $9}')
-   	DOWN=$(ls -ltrh down | grep $i | awk '{print $9}')
-	cat $BASE/ModelUncert/up/$UP/output/pdfs_q2val_$1.txt | tail -n +3 | awk '{print $'$2'}' > tmp_up_$i
-   	cat $BASE/ModelUncert/down/$DOWN/output/pdfs_q2val_$1.txt | tail -n +3 | awk '{print $'$2'}' > tmp_down_$i
+   	UP=$(ls -ltrh | grep Up | grep $i | awk '{print $9}')
+   	DOWN=$(ls -ltrh | grep Down | grep $i | awk '{print $9}')
+	cat $BASE/ModelUncert/$UP/output/pdfs_q2val_$1.txt | tail -n +3 | awk '{print $'$2'}' > tmp_up_$i
+   	cat $BASE/ModelUncert/$DOWN/output/pdfs_q2val_$1.txt | tail -n +3 | awk '{print $'$2'}' > tmp_down_$i
 	paste $BASE/tmp_$3-$1_center tmp_up_$i tmp_down_$i | awk '{print $1,$2,$3}' > tmp_three_col_$i
 	rm tmp_up_$i tmp_down_$i
   	touch tmp_max tmp_min
@@ -179,8 +184,11 @@ GetModelUnc (){
    paste model_plus_* | awk '{print $1,$2,$3,$4}' | awk '{print ($1^2)+($2^2)+($3^2)+($4^2)}' | awk '{print sqrt($1)}' > model_p
    paste model_minus_* | awk '{print $1,$2,$3,$4}' | awk '{print ($1^2)+($2^2)+($3^2)+($4^2)}' | awk '{print sqrt($1)}' > model_m
 
-   paste model_p $BASE/WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/$3_plus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_p    
-   paste model_m $BASE/WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015/output/$3_minus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_m    
+   paste model_p $BASE/hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/$3_plus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_p    
+   paste model_m $BASE/hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/$3_minus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_m    
+   
+
+   paste $BASE/ModelUncert/tmp_total exp_model_p exp_model_m | awk '{print $1,$2,($3/$2),(-1)*($4/$2)}' > $3.relative.model.txt 
    paste $BASE/ModelUncert/tmp_total exp_model_p exp_model_m | awk '{print $1,$2,($2+$3),($2-$4)}' > $3_model.txt	
 
    mv $3_model.txt ../
@@ -192,10 +200,10 @@ GetModelUnc (){
 }
 
 #GetExpUnc 01 2 g
-MCMethod $scale $flavor $string $exp
+#MCMethod $scale $flavor $string $exp
 GetExpUnc $scale $flavor $string
 GetModelUnc $scale $flavor $string 
-GetParUnc $scale $flavor $string 
+#GetParUnc $scale $flavor $string 
 
 EXP_num=$(cat draw_pdf.C | grep -n file.open | awk '{print $1}' | cut -d : -f1)
 YAXIS_num=$(cat draw_pdf.C | grep -n GetYaxis | awk '{print $1}' | cut -d : -f1) 
@@ -206,7 +214,7 @@ MAX_num=$(cat plot_super.C | grep -n SetMaximum | awk '{print $1}' | cut -d : -f
 MODEL_num=$(cat draw_pdf.C | grep -n file.open | awk '{print $1}' | cut -d : -f1)
 
 cp draw_pdf.C draw_pdf_$string.C
-sed -i ''$EXP_num's/.*/\tfile.open(\"WAsymm-8TeV-10p+Dg+Bdv+EUbar_BANDS.16:26:02-06-30-2015\/output\/'$string'.txt\")\;/' draw_pdf_$string.C
+sed -i ''$EXP_num's/.*/\tfile.open(\"hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015\/output\/'$string'.txt\")\;/' draw_pdf_$string.C
 #sed -i ''$PDF_num's/.*/\tc1->Print(\"'$string'.pdf\")\;/' draw_pdf_$string.C
 sed -i ''$YAXIS_num's/.*/\tgr->GetYaxis()->SetTitle(\"x.'$string'(x,Q^{2})")\;/' draw_pdf_$string.C
 
@@ -251,25 +259,54 @@ sed -i 's/Shade_MC/Shade_MC_rel/' draw_pdf_$string.C
 
 root -l -q draw_pdf_$string.C
 
-LABEL_num_tx=$(cat plot_super.C | grep -n "CMS NNLO" | grep tx | awk '{print $1}' | cut -d : -f1)
+sed -i ''$TFILE_num's/.*/\tTFile *f = new TFile(\"plots.root\",\"UPDATE\")\;/' draw_pdf_$string.C
+sed -i ''$EXP_num's/.*/\tfile.open(\"hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015\/output\/'$string'.relative.exp.txt\")\;/' draw_pdf_$string.C
+sed -i 's/Center_MC_rel/Center_EXP_rel/' draw_pdf_$string.C
+sed -i 's/Plus_MC_rel/Plus_EXP_rel/' draw_pdf_$string.C
+sed -i 's/Minus_MC_rel/Minus_EXP_rel/' draw_pdf_$string.C
+sed -i 's/Shade_MC_rel/Shade_EXP_rel/' draw_pdf_$string.C
+
+
+root -l -q draw_pdf_$string.C
+
+sed -i ''$TFILE_num's/.*/\tTFile *f = new TFile(\"plots.root\",\"UPDATE\")\;/' draw_pdf_$string.C
+sed -i ''$EXP_num's/.*/\tfile.open(\"ModelUncert\/'$string'.relative.model.txt\")\;/' draw_pdf_$string.C
+sed -i 's/Center_EXP_rel/Center_MODEL_rel/' draw_pdf_$string.C
+sed -i 's/Plus_EXP_rel/Plus_MODEL_rel/' draw_pdf_$string.C
+sed -i 's/Minus_EXP_rel/Minus_MODEL_rel/' draw_pdf_$string.C
+sed -i 's/Shade_EXP_rel/Shade_MODEL_rel/' draw_pdf_$string.C
+
+root -l -q draw_pdf_$string.C
+
+sed -i ''$TFILE_num's/.*/\tTFile *f = new TFile(\"plots.root\",\"UPDATE\")\;/' draw_pdf_$string.C
+sed -i ''$EXP_num's/.*/\tfile.open(\"ParaUncert\/'$string'.relative.para.txt\")\;/' draw_pdf_$string.C
+sed -i 's/Center_MODEL_rel/Center_PARA_rel/' draw_pdf_$string.C
+sed -i 's/Plus_MODEL_rel/Plus_PARA_rel/' draw_pdf_$string.C
+sed -i 's/Minus_MODEL_rel/Minus_PARA_rel/' draw_pdf_$string.C
+sed -i 's/Shade_MODEL_rel/Shade_PARA_rel/' draw_pdf_$string.C
+
+
+root -l -q draw_pdf_$string.C
+
+LABEL_num_tx=$(cat plot_super.C | grep -n "CMS NLO" | grep tx | awk '{print $1}' | cut -d : -f1)
 LABEL_num_tx2=$(cat plot_super.C | grep -n tx2 | grep TLatex | awk '{print $1}' | cut -d : -f1)
 
 case "$string" in
 "dv")
 	sed -i ''$MAX_num's/.*/g->SetMaximum(0.6)\;/' plot_super.C
-	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,0.6,\"CMS NNLO\")\;/' plot_super.C
+	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,0.6,\"CMS NLO\")\;/' plot_super.C
 	sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,0.5811539,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
 
 ;;
 "g")
 	if [ $scale -eq "05" ] || [ $scale -eq "04" ];then
 		sed -i ''$MAX_num's/.*/g->SetMaximum(60)\;/' plot_super.C
-		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,60.835391,\"CMS NNLO\")\;/' plot_super.C
+		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,60.835391,\"CMS NLO\")\;/' plot_super.C
 		sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.03921771,57.105647,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
 
 	else
 		sed -i ''$MAX_num's/.*/g->SetMaximum(4.5)\;/' plot_super.C
-		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,4.535391,\"CMS NNLO\")\;/' plot_super.C
+		sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,4.535391,\"CMS NLO\")\;/' plot_super.C
 		sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,4.105647,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
 	fi
 	
@@ -277,7 +314,7 @@ case "$string" in
 ;;
 "uv")
 	sed -i ''$MAX_num's/.*/g->SetMaximum(1.0)\;/' plot_super.C
-	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,1.011866,\"CMS NNLO\")\;/' plot_super.C
+	sed -i ''$LABEL_num_tx's/.*/TLatex \*tx = new TLatex(0.0001129711,1.011866,\"CMS NLO\")\;/' plot_super.C
 	sed -i ''$LABEL_num_tx2's/.*/TLatex \*tx2 = new TLatex(0.04921771,0.8811539,\"Q^{2}='$real_scale' GeV^{2}\")\;/' plot_super.C
 	
 ;;
@@ -294,10 +331,10 @@ root -l -q plot_super.C
 
 
 mv c1.pdf $string.$scale.pdf
-mv c2.pdf $string.$scale.MC_13p.pdf
+#mv c2.pdf $string.$scale.MC_13p.pdf
 
 mv $string.$scale.pdf plots/
-mv $string.$scale.MC_13p.pdf plots/
+#mv $string.$scale.MC_13p.pdf plots/
 
 evince plots/$string.$scale.pdf 
 #evince plots/$string.$scale.MC_heraOnly.pdf 

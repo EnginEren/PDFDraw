@@ -75,6 +75,7 @@ GetExpUnc (){
 # $3 = pdf type --String 
 # example : GetExpUnc 02 5 uv
 cd hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output
+#cd hera2_only-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.10:50:24-08-10-2015/output
 
 ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep p_$1 |  awk '{print $9}' > pdf_list_p
 ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep m_$1 |  awk '{print $9}' > pdf_list_m
@@ -84,7 +85,7 @@ for i in $(cat pdf_list_p);do
    touch $3_$i plus_$i pdiff_$3_$i
    cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > $3_$i
    cat $i | awk '{print $'$2'}' | tail -n +3 > plus_$i
-   paste plus_$i $3_$i | awk '{print $1,$2}' | awk '{print ($1-$2)}' > pdiff_$3_$i  
+   paste plus_$i $3_$i | awk '{print $1,$2}' | awk '{dif=$1-$2; printf "%.17f\n", dif}' > pdiff_$3_$i  
    rm $3_$i 
    rm plus_$i 
 done
@@ -93,24 +94,24 @@ for j in $(cat pdf_list_m);do
    touch $3_$j minus_$j mdiff_$3_$j
    cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > $3_$j
    cat $j | awk '{print $'$2'}' | tail -n +3 > minus_$j
-   paste minus_$j $3_$j | awk '{print $1,$2}' | awk '{print ($2-$1)}' > mdiff_$3_$j  
+   paste minus_$j $3_$j | awk '{print $1,$2}' | awk '{dif=$2-$1; printf "%.17f\n", dif}' > mdiff_$3_$j  
    rm $3_$j 
    rm minus_$j 
 done
 
-paste -d ' ' *mdiff* > $3_13source_m 
-paste -d ' ' *pdiff* > $3_13source_p
+paste -d ' ' *mdiff* > $3_18source_m 
+paste -d ' ' *pdiff* > $3_18source_p
 rm mdiff*
 rm pdiff*
 
-cat $3_13source_m | awk '{print ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)}' | awk '{print sqrt($1)}' > $3_minus
-cat $3_13source_p | awk '{print ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)}' | awk '{print sqrt($1)}' > $3_plus
+cat $3_18source_m | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}'  > $3_minus
+cat $3_18source_p | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}' > $3_plus
 
 cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp
-paste tmp $3_plus $3_minus | awk '{print $1,($1+$2),($1-$3)}' > tmp_2.txt
+paste tmp $3_plus $3_minus | awk '{i=$1;j=$1+$2;k=$1-$3; printf "%.17f\t%.17f\t%.17f\n", i,j,k}' > tmp_2.txt
 
 cat pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > x
-paste x tmp $3_plus $3_minus | awk '{print $1,$2,($3/$2),(-1)*($4/$2)}' > $3.relative.exp.txt 
+paste x tmp $3_plus $3_minus | awk '{i=$1;j=$2;k=($3/$2);l=(-1)*($4/$2); printf "%.17f\t%.17f\t%.17f\t%.17f\n",i,j,k,l}' > $3.relative.exp.txt 
 
 paste x tmp_2.txt | awk '{print $1,$2,$3,$4}' > $3.txt
 rm tmp tmp_2.txt x
@@ -188,7 +189,7 @@ GetModelUnc (){
    paste model_m $BASE/hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/$3_minus | awk '{print ($1^2)+($2^2)}' | awk '{print sqrt($1)}' > exp_model_m    
    
 
-   paste $BASE/ModelUncert/tmp_total exp_model_p exp_model_m | awk '{print $1,$2,($3/$2),(-1)*($4/$2)}' > $3.relative.model.txt 
+   paste $BASE/ModelUncert/tmp_total exp_model_p exp_model_m | awk '{print $1,$2,($3/$2),(-1.0)*($4/$2)}' > $3.relative.model.txt 
    paste $BASE/ModelUncert/tmp_total exp_model_p exp_model_m | awk '{print $1,$2,($2+$3),($2-$4)}' > $3_model.txt	
 
    mv $3_model.txt ../
@@ -203,7 +204,7 @@ GetModelUnc (){
 #MCMethod $scale $flavor $string $exp
 GetExpUnc $scale $flavor $string
 GetModelUnc $scale $flavor $string 
-#GetParUnc $scale $flavor $string 
+GetParUnc $scale $flavor $string 
 
 EXP_num=$(cat draw_pdf.C | grep -n file.open | awk '{print $1}' | cut -d : -f1)
 YAXIS_num=$(cat draw_pdf.C | grep -n GetYaxis | awk '{print $1}' | cut -d : -f1) 

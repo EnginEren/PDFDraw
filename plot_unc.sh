@@ -81,31 +81,30 @@ ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep p_$1 |  awk '{print $9}' > pdf_
 ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep m_$1 |  awk '{print $9}' > pdf_list_m
 
 
-for i in $(cat pdf_list_p);do
-   touch $3_$i plus_$i pdiff_$3_$i
+for i in {01..18};do
+   touch $3_$i plus_$i pdiff_$3_$i mdiff_$3_$i
    cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > $3_$i
-   cat $i | awk '{print $'$2'}' | tail -n +3 > plus_$i
-   paste plus_$i $3_$i | awk '{print $1,$2}' | awk '{dif=$1-$2; printf "%.17f\n", dif}' > pdiff_$3_$i  
+   cat pdfs_q2val_s"$i"p_$1.txt | awk '{print $'$2'}' | tail -n +3 > plus_$i
+   cat pdfs_q2val_s"$i"m_$1.txt | awk '{print $'$2'}' | tail -n +3 > minus_$i
+   paste $3_$i plus_$i minus_$i | awk '{if ($2 > $3) print $2; else print $3}' > tmp_max  
+   paste $3_$i plus_$i minus_$i | awk '{if ($2 > $3) print $3; else print $2}' > tmp_min  
+  
+   paste tmp_max $3_$i | awk '{print $1,$2}' | awk '{dif=$1-$2; printf "%.17f\n", dif}' > pdiff_$3_$i  
+   paste tmp_min $3_$i | awk '{print $1,$2}' | awk '{dif=$2-$1; printf "%.17f\n", dif}' > mdiff_$3_$i  
+   
    rm $3_$i 
    rm plus_$i 
+   rm minus_$i 
 done
 
-for j in $(cat pdf_list_m);do
-   touch $3_$j minus_$j mdiff_$3_$j
-   cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > $3_$j
-   cat $j | awk '{print $'$2'}' | tail -n +3 > minus_$j
-   paste minus_$j $3_$j | awk '{print $1,$2}' | awk '{dif=$2-$1; printf "%.17f\n", dif}' > mdiff_$3_$j  
-   rm $3_$j 
-   rm minus_$j 
-done
 
 paste -d ' ' *mdiff* > $3_18source_m 
 paste -d ' ' *pdiff* > $3_18source_p
 rm mdiff*
 rm pdiff*
 
-cat $3_18source_m | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}'  > $3_minus
-cat $3_18source_p | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}' > $3_plus
+cat $3_18source_m | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.7f\n", sq}'  > $3_minus
+cat $3_18source_p | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.7f\n", sq}' > $3_plus
 
 cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp
 paste tmp $3_plus $3_minus | awk '{i=$1;j=$1+$2;k=$1-$3; printf "%.17f\t%.17f\t%.17f\n", i,j,k}' > tmp_2.txt

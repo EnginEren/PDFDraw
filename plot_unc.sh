@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASE=/nfs/dust/cms/user/eren/pbs/InclJets/Plotting
-MC_path=/nfs/dust/cms/user/eren/pbs/WA/MC_method
+MC_path=/nfs/dust/cms/user/eren/pbs/HERA2/MC_method
 echo "This script is for calculating experimental, model and parametrisation uncertainty for each flavor and Q2"
 echo "Please enter 4 parameters. 1st one is scale, 2nd is pdf type number, 3rd is string and 4th is experiment"
 echo "PDF Type : Gluon : 2, u_v : 7, d_v : 8."
@@ -32,21 +32,22 @@ echo "The scale you have chosen (GeV^2): " $real_scale
 
 MCMethod (){
 if [ $4 == "hera" ]; then
-	ls -ltrh $MC_path | grep 13pHERAII_replica_ | awk '{print $9}' > files_mc
+	ls -ltrh $MC_path | grep 18pHERAII_replica | awk '{print $9}' > files_mc
+	cat $MC_path/18pHERAII_replica_1/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_$1
 else
-	ls -ltrh $MC_path | grep 13pHERAII+CMS | awk '{print $9}' > files_mc
+	ls -ltrh $MC_path | grep 18pHERAII+CMS | awk '{print $9}' > files_mc
+	cat $MC_path/18pHERAII+CMS_replica_1/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_$1
 fi
 
-cat $MC_path/13pHERAII+CMS_WAsym_replica_74/output/pdfs_q2val_$1.txt | awk '{print $1}' | tail -n +3 > tmp_x_$1
 cat hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$1_center_$3
 
 for i in $(cat files_mc);do
 	cat $MC_path/$i/output/pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp_$i	
 done
 
-paste -d ' ' tmp_x_$1 tmp_$1_center_$3 tmp_13pHERA* > MC.$3.full.txt
+paste -d ' ' tmp_x_$1 tmp_$1_center_$3 tmp_18pHERA* > MC.$3.full.txt
 
-rm tmp_13pHERA*
+rm tmp_18pHERA*
 rm mc_rms mc_mean mc_sq
 touch mc_rms mc_mean mc_sq
 
@@ -59,10 +60,11 @@ done
 paste -d ' ' mc_sq mc_mean | awk '{print sqrt($1-($2*$2))}' > mc_sigma  
 paste -d ' ' mc_sq | awk '{print sqrt($1)}' > mc_RMS  
 
-#paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_rms | awk '{print $1,$2,($2+$3),($2-$3)}' > MC.$3.txt
+#paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_RMS | awk '{print $1,$2,($2+$3),($2-$3)}' > MC.$3.txt
 paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_sigma | awk '{print $1,$2,($2+$3),($2-$3)}' > MC.$3.txt
 
 paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_sigma | awk '{print $1,$2,($3/$2),(-1)*($3/$2)}' > MC.$3.relative.txt
+#paste -d ' ' tmp_x_$1 tmp_$1_center_$3 mc_RMS | awk '{print $1,$2,($3/$2),(-1)*($3/$2)}' > MC.$3.relative.txt
 rm tmp_x_$1 
 rm tmp_$1_center_$3
 
@@ -76,10 +78,6 @@ GetExpUnc (){
 # example : GetExpUnc 02 5 uv
 cd hera2_cms8TeV-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.11:32:29-08-07-2015/output
 #cd hera2_only-10p+NeG+DUbar+Eg+Duv+Ddv+EDbar+DDbar_BANDS.10:50:24-08-10-2015/output
-
-ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep p_$1 |  awk '{print $9}' > pdf_list_p
-ls -ltrh | grep pdfs_ | grep pdfs_q2val_s | grep m_$1 |  awk '{print $9}' > pdf_list_m
-
 
 for i in {01..18};do
    touch $3_$i plus_$i pdiff_$3_$i mdiff_$3_$i
@@ -103,8 +101,8 @@ paste -d ' ' *pdiff* > $3_18source_p
 rm mdiff*
 rm pdiff*
 
-cat $3_18source_m | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.7f\n", sq}'  > $3_minus
-cat $3_18source_p | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.7f\n", sq}' > $3_plus
+cat $3_18source_m | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}'  > $3_minus
+cat $3_18source_p | awk '{sum = ($1^2)+($2^2)+($3^2)+($4^2)+($5^2)+($6^2)+($7^2)+($8^2)+($9^2)+($10^2)+($11^2)+($12^2)+($13^2)+($14^2)+($15^2)+($16^2)+($17^2)+($18^2); printf "%.17f\n", sum}' | awk '{ sq=sqrt($1);  printf "%.17f\n", sq}' > $3_plus
 
 cat pdfs_q2val_$1.txt | awk '{print $'$2'}' | tail -n +3 > tmp
 paste tmp $3_plus $3_minus | awk '{i=$1;j=$1+$2;k=$1-$3; printf "%.17f\t%.17f\t%.17f\n", i,j,k}' > tmp_2.txt
@@ -200,7 +198,7 @@ GetModelUnc (){
 }
 
 #GetExpUnc 01 2 g
-#MCMethod $scale $flavor $string $exp
+MCMethod $scale $flavor $string $exp
 GetExpUnc $scale $flavor $string
 GetModelUnc $scale $flavor $string 
 GetParUnc $scale $flavor $string 
@@ -331,13 +329,13 @@ root -l -q plot_super.C
 
 
 mv c1.pdf $string.$scale.pdf
-#mv c2.pdf $string.$scale.MC_13p.pdf
+mv c2.pdf $string.$scale.MC_18p.pdf
 
 mv $string.$scale.pdf plots/
-#mv $string.$scale.MC_13p.pdf plots/
+mv $string.$scale.MC_18p.pdf plots/
 
 evince plots/$string.$scale.pdf 
-#evince plots/$string.$scale.MC_heraOnly.pdf 
+evince plots/$string.$scale.MC_18p.pdf 
 #evince plots/$string.$scale.MC_rel.pdf 
  
 

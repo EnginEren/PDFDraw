@@ -1,7 +1,7 @@
 {
  
 	TFile *f1 = new TFile("plots.root");
-	TFile *f = new TFile("hera_vs_cms.root","recreate");
+TFile *f = new TFile("MC.hera+CMS.g.01.root","recreate");
 	
 	TGraph *g = (TGraph*)f1->Get("Center");
 	TGraph *g_p = (TGraph*)f1->Get("Plus");
@@ -13,6 +13,7 @@
 	TGraph *g_shade = (TGraph*)f1->Get("Shade");
 	TGraph *g_shade_model = (TGraph*)f1->Get("Shade_model");
 	TGraph *g_shade_para = (TGraph*)f1->Get("Shade_para");
+	TGraph *g_MC = (TGraph*)f1->Get("Center_MC");
 	TGraph *g_p_MC = (TGraph*)f1->Get("Plus_MC");
 	TGraph *g_m_MC = (TGraph*)f1->Get("Minus_MC");
 	TGraph *g_shade_MC = (TGraph*)f1->Get("Shade_MC");
@@ -37,7 +38,8 @@
 	c1->cd();
 	c1->Update();
 	c1->SetLogx();
-g->SetMaximum(0.6);
+g->SetMaximum(4.5);
+g_MC->SetMaximum(4.5);
 	g->GetHistogram()->SetMinimum(-0.03);	
         g->Draw("AC");
         g_p_para->Draw("C");
@@ -50,12 +52,12 @@ g->SetMaximum(0.6);
         g_m->Draw("SAME");
         g_shade->Draw("f");
         g->Draw("SAME");
-	TLatex *tx = new TLatex(0.0001456793,0.6077396,"CMS NNLO");
-   	tex->SetLineWidth(2);
-   	tex->Draw();
-	TLatex *tx2 = new TLatex(0.2205917,0.5442355,"Q^{2}=M^{2}_{W}");
-	tex2->SetLineWidth(2);
-	tex2->Draw();
+TLatex *tx = new TLatex(0.0001129711,4.535391,"CMS NLO");
+   	tx->SetLineWidth(2);
+   	tx->Draw();
+TLatex *tx2 = new TLatex(0.04921771,4.105647,"Q^{2}=1.9 GeV^{2}");
+	tx2->SetLineWidth(2);
+	tx2->Draw();
 
 	c2->cd();
 	c2->Update();
@@ -68,20 +70,20 @@ g->SetMaximum(0.6);
 	pad1->cd();
 	pad1->SetLogx();
 		
-	g->Draw("AC");
+	g_MC->Draw("AC");
 	g_p_MC->Draw("C");
 	g_m_MC->Draw("C");
        	g_shade_MC->Draw("f");
-	g->Draw("SAME");
-	TLatex *   tex = new TLatex(0.0001456793,0.6077396,"CMS NNLO");
+	g_MC->Draw("SAME");
+	TLatex *   tex = new TLatex(0.0001219693,4.634165,"CMS NLO");
    	tex->SetLineWidth(2);
    	tex->Draw();
-	TLatex *tex2 = new TLatex(0.2205917,0.5442355,"Q^{2}=M^{2}_{W}");
+	TLatex *tex2 = new TLatex(0.126933,4.61909,"MC Method");
 	tex2->SetLineWidth(2);
 	tex2->Draw();
-	TLatex *tex3 = new TLatex(0.0001294095,0.5482045,"HERAI+II DIS");
-   	tex3->SetLineWidth(2);
-	tex3->Draw();
+	//TLatex *tex3 = new TLatex(0.0001294095,0.5482045,"HERAI+II DIS");
+   	//tex3->SetLineWidth(2);
+	//tex3->Draw();
 
 	pad1->Modified();
 
@@ -116,6 +118,7 @@ g->SetMaximum(0.6);
        	g_shade_MC_rel->Write();
 	
 	g->Write();
+	g_MC->Write();
 	g_p_MC->Write();
 	g_m_MC->Write();
        	g_shade_MC->Write();
